@@ -90,7 +90,7 @@ Contains `RasterClipper` and `VectorClipper` for basic clipping operations.
 For clipping raster datasets using coordinates or center points.
 
 ```python
-from clipper import RasterClipper
+from sampler import RasterClipper
 
 # Initialize with a raster file
 clipper = RasterClipper("input.tif")
@@ -123,7 +123,7 @@ result = clipper.clip_by_pixels(
 For clipping and rasterizing vector datasets.
 
 ```python
-from clipper import VectorClipper
+from sampler import VectorClipper
 
 # Initialize with a vector file
 clipper = VectorClipper("input.shp")
