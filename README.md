@@ -238,4 +238,4 @@ sampler.clip_vectors(
 
 ## Author
 
-Salar Ghaffarian (salar@myheat.ca)
+Salar Ghaffarian (salarghaffrian1363@gmail.com)
