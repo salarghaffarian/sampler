@@ -96,7 +96,7 @@ from tqdm import tqdm
 def _init_gdal():
     """Initialize GDAL configuration for worker processes."""
     gdal.PushErrorHandler('CPLQuietErrorHandler')
-    gdal.UseExceptions()
+    # gdal.UseExceptions()
     gdal.SetConfigOption('GDAL_PAM_ENABLED', 'NO')
     gdal.SetConfigOption('CPL_DEBUG', 'OFF')
     warnings.filterwarnings('ignore', category=RuntimeWarning)
