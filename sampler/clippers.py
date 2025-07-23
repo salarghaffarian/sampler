@@ -1,3 +1,11 @@
+"""
+This module contains the functionalities to clip/crop raster dataset into cropped raster dataset and 
+clip/crop the vector dataset into rasterized raster dataset by given coordinates of the Area of Interest.
+
+"""
+
+
+
 from osgeo import gdal, osr, ogr
 import numpy as np
 import cv2
@@ -130,8 +138,8 @@ class RasterClipper:
         Clip the raster using a center point and dimensions.
         
         Args:
-            center_geo_x (float): X coordinate of center point
-            center_geo_y (float): Y coordinate of center point
+            center_geo_x (float): X geographic coordinate of center point
+            center_geo_y (float): Y geographic coordinate of center point
             bbox_width (int): Width of the clipping box in pixels
             bbox_height (int): Height of the clipping box in pixels
             output_format (str): Format of output - either "array" or "geocoded"
@@ -447,7 +455,7 @@ class VectorClipper:
             temp_vector = os.path.join(temp_dir, 'temp_clip.shp')
             
             # Clip features
-            num_features = self.clip_to_bbox(bbox, temp_vector)
+            num_features = self.clip_features_to_bbox(bbox, temp_vector)
             if num_features == 0:
                 return np.zeros((1, 1), dtype=np.float32)
             
@@ -492,7 +500,7 @@ class VectorClipper:
         except Exception as e:
             raise Exception(f"Error in rasterize_clip: {str(e)}")
         
-    def clip_to_bbox(self, bbox, output_path):
+    def clip_features_to_bbox(self, bbox, output_path):
         """
         Clip features to bbox and save to new shapefile.
         
@@ -549,9 +557,9 @@ class VectorClipper:
             return features_processed
             
         except Exception as e:
-            raise Exception(f"Error in clip_to_bbox: {str(e)}")
+            raise Exception(f"Error in clip_features_to_bbox: {str(e)}")
 
-    def clip_by_center(self, center_geo_x, center_geo_y, pixel_width, pixel_height,
+    def clip_by_center(self, center_geo_x, center_geo_y, bbox_width, bbox_height,
                       pixel_size, burn_value=1, output_format="array", 
                       save_output=False, output_path=None):
         """
@@ -560,8 +568,8 @@ class VectorClipper:
         Args:
             center_geo_x (float): X coordinate of center point
             center_geo_y (float): Y coordinate of center point
-            pixel_width (int): Width of output in pixels
-            pixel_height (int): Height of output in pixels
+            bbox_width (int):Width of the clipping box in pixels
+            bbox_height (int): Height of the clipping box in pixels
             pixel_size (float): Size of pixels in map units
             burn_value (float): Value to burn into raster (default: 1)
             output_format (str): Either 'array' or 'geocoded'
@@ -576,15 +584,15 @@ class VectorClipper:
             if not all(isinstance(x, (int, float)) for x in [center_geo_x, center_geo_y]):
                 raise ValueError("Center coordinates must be numeric")
                 
-            if not all(isinstance(x, int) and x > 0 for x in [pixel_width, pixel_height]):
+            if not all(isinstance(x, int) and x > 0 for x in [bbox_width, bbox_height]):
                 raise ValueError("Pixel dimensions must be positive integers")
                 
             if not isinstance(pixel_size, (int, float)) or pixel_size <= 0:
                 raise ValueError("Pixel size must be a positive number")
 
             # Calculate real-world width and height
-            width_map_units = pixel_width * pixel_size
-            height_map_units = pixel_height * pixel_size
+            width_map_units = bbox_width * pixel_size
+            height_map_units = bbox_height * pixel_size
 
             # Calculate bbox
             bbox = self.calculate_bbox(
@@ -595,8 +603,8 @@ class VectorClipper:
             )
 
             # Calculate geotransform for final output
-            minx = center_geo_x - (pixel_width * pixel_size) / 2
-            maxy = center_geo_y + (pixel_height * pixel_size) / 2
+            minx = center_geo_x - (bbox_width * pixel_size) / 2
+            maxy = center_geo_y + (bbox_height * pixel_size) / 2
             geotransform = (minx, pixel_size, 0, maxy, 0, -pixel_size)
 
             # Perform rasterization
@@ -613,7 +621,7 @@ class VectorClipper:
             else:  # 'geocoded'
                 # Create geocoded dataset
                 mem_driver = gdal.GetDriverByName('MEM')
-                out_ds = mem_driver.Create('', pixel_width, pixel_height, 1, gdal.GDT_Float32)
+                out_ds = mem_driver.Create('', bbox_width, bbox_height, 1, gdal.GDT_Float32)
                 out_ds.SetProjection(self.spatial_ref.ExportToWkt())
                 out_ds.SetGeoTransform(geotransform)
                 out_ds.GetRasterBand(1).WriteArray(result)
